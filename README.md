@@ -26,34 +26,6 @@ import RegionGlobe
 import SwiftUI
 ```
 
-## Web Preview
-
-This repository includes a browser playground in `docs/index.html`. It mirrors the public props with sliders, color controls, texture modes, country selection, and generated Swift code.
-
-Live preview:
-
-```text
-https://preview-production-e30a.up.railway.app
-```
-
-The Railway deployment serves the same `docs/index.html` playground through the dependency-free Node server in `server.js`.
-
-To publish the same playground on GitHub Pages instead:
-
-1. Open the repository on GitHub.
-2. Go to `Settings` -> `Pages`.
-3. Set `Source` to `Deploy from a branch`.
-4. Set branch to `main` and folder to `/docs`.
-5. Save.
-
-After Pages finishes building, the preview will be available at:
-
-```text
-https://0xfreddy.github.io/RegionGlobe/
-```
-
-The web page is a prop playground and visual approximation. The real component renders with SwiftUI and RealityKit on iOS.
-
 ## Basic Usage
 
 ```swift
