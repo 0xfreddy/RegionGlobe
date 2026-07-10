@@ -1,0 +1,13 @@
+{
+  "name": "regionglobe-preview",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static preview playground for the RegionGlobe SwiftUI package.",
+  "scripts": {
+    "start": "node server.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
