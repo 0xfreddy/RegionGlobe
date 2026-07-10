@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RegionGlobe Preview</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050607;
+      --panel: rgba(16, 18, 19, 0.82);
+      --panel-strong: rgba(28, 30, 31, 0.92);
+      --line: rgba(255, 255, 255, 0.16);
+      --text: #f2eee4;
+      --muted: #a9aaa4;
+      --accent: #fb6415;
+      --glow: #ffffff;
+      --ring: #ffffff;
+      --globe: #030405;
+      --neutral-dot: rgba(255, 255, 255, 0.86);
+      --selected-dot: #fb6415;
+      --shadow: #000000;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(120deg, rgba(251, 100, 21, 0.12), transparent 32%),
+        radial-gradient(circle at 75% 14%, rgba(255, 255, 255, 0.11), transparent 24%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+      gap: 0;
+    }
+
+    .stage {
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      padding: 44px;
+      overflow: hidden;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      width: min(76vw, 680px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.12), transparent 34%),
+        radial-gradient(circle at center, color-mix(in srgb, var(--glow), transparent 82%), transparent 64%);
+      filter: blur(14px);
+      transform: translateY(-10px);
+      pointer-events: none;
+    }
+
+    .stage::after {
+      content: "";
+      position: absolute;
+      width: 480px;
+      height: 116px;
+      bottom: 15%;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--shadow), transparent 36%);
+      filter: blur(28px);
+      opacity: 0.82;
+      pointer-events: none;
+    }
+
+    .preview-card {
+      position: relative;
+      z-index: 1;
+      width: min(620px, 100%);
+      display: grid;
+      gap: 20px;
+      justify-items: center;
+    }
+
+    .hero-copy {
+      width: min(560px, 100%);
+      display: grid;
+      gap: 10px;
+      justify-self: start;
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 6vw, 84px);
+      line-height: 0.9;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .subhead {
+      margin: 0;
+      max-width: 52ch;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .globe-wrap {
+      position: relative;
+      width: min(520px, 78vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .ring {
+      position: absolute;
+      width: calc(var(--ring-scale, 0.62) * 100%);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 2px solid color-mix(in srgb, var(--ring), transparent 5%);
+      box-shadow:
+        0 0 22px color-mix(in srgb, var(--ring), transparent 35%),
+        0 0 64px color-mix(in srgb, var(--ring), transparent 66%);
+      filter: blur(0.1px);
+    }
+
+    canvas {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      max-height: 500px;
+      filter: drop-shadow(0 34px 42px color-mix(in srgb, var(--shadow), transparent 48%));
+    }
+
+    .chip-row {
+      width: min(560px, 100%);
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 4px;
+      scrollbar-width: none;
+    }
+
+    .chip-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      flex: 0 0 142px;
+      height: 44px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 750;
+    }
+
+    .chip.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .controls {
+      min-height: 100vh;
+      padding: 28px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%),
+        var(--panel);
+      border-left: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+      overflow: auto;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .control-header h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.05;
+    }
+
+    .note {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .group {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .group h3 {
+      margin: 0 0 14px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    label {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 38px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    label + label,
+    .swatches + .swatches {
+      margin-top: 10px;
+    }
+
+    input[type="range"] {
+      grid-column: 1 / -1;
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    input[type="color"] {
+      width: 42px;
+      height: 28px;
+      border: 1px solid var(--line);
+      background: transparent;
+      padding: 0;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 20px;
+      height: 20px;
+    }
+
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 0 10px;
+    }
+
+    .value {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .swatch {
+      height: 38px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .country {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 720;
+    }
+
+    .country.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent), transparent 16%);
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #f8f0de;
+      background: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .copy {
+      min-height: 40px;
+      width: 100%;
+      margin-top: 10px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 820;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        display: block;
+      }
+
+      .stage {
+        position: relative;
+        min-height: auto;
+        padding: 28px 18px 12px;
+      }
+
+      .controls {
+        min-height: auto;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        padding: 18px;
+      }
+
+      .chip {
+        flex-basis: 128px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="stage" aria-label="RegionGlobe web preview">
+      <div class="preview-card">
+        <div class="hero-copy">
+          <div class="kicker">SwiftUI RealityKit Package</div>
+          <h1>RegionGlobe</h1>
+          <p class="subhead">A browser playground for the public props. The shipped component renders with SwiftUI and RealityKit on iOS; this page mirrors the controls and generates Swift code for the package.</p>
+        </div>
+
+        <div class="globe-wrap" id="globeWrap">
+          <div class="ring" aria-hidden="true"></div>
+          <canvas id="globe" width="720" height="720" aria-label="Animated globe preview"></canvas>
+        </div>
+
+        <div class="chip-row" id="regionChips" aria-label="Region selector"></div>
+      </div>
+    </section>
+
+    <aside class="controls" aria-label="Component controls">
+      <div class="control-header">
+        <h2>Props Playground</h2>
+      </div>
+      <p class="note">Use this to tune the public API before copying the Swift snippet. Enable GitHub Pages with source <strong>main / docs</strong> to publish it.</p>
+
+      <section class="group">
+        <h3>Interaction</h3>
+        <label>Auto-rotate <input id="autoRotates" type="checkbox" checked></label>
+        <label>Show region picker <input id="showsRegionPicker" type="checkbox" checked></label>
+        <label>Allow pan <input id="allowsPan" type="checkbox" checked></label>
+        <label>Metallic globe <input id="globeIsMetallic" type="checkbox"></label>
+        <label>Texture
+          <select id="textureMode">
+            <option value="none">None</option>
+            <option value="grid">Grid</option>
+            <option value="bands">Bands</option>
+            <option value="topology">Topology</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="group">
+        <h3>Layout And Motion</h3>
+        <label>Idle zoom <span class="value" id="idleZoomValue"></span><input id="idleZoom" type="range" min="0.9" max="1.4" step="0.01" value="1.12"></label>
+        <label>Selected zoom <span class="value" id="selectedZoomValue"></span><input id="selectedZoom" type="range" min="1" max="1.7" step="0.01" value="1.38"></label>
+        <label>Ring scale <span class="value" id="ringScaleValue"></span><input id="ringScale" type="range" min="0.35" max="0.85" step="0.01" value="0.62"></label>
+        <label>Rotation speed <span class="value" id="rotationSpeedValue"></span><input id="rotationSpeed" type="range" min="0" max="0.16" step="0.005" value="0.065"></label>
+        <label>Roughness <span class="value" id="roughnessValue"></span><input id="globeRoughness" type="range" min="0.08" max="1" step="0.01" value="0.92"></label>
+      </section>
+
+      <section class="group">
+        <h3>Color</h3>
+        <label>Background <input id="background" type="color" value="#050607"></label>
+        <label>Globe fill <input id="globeMaterial" type="color" value="#030405"></label>
+        <label>Neutral dots <input id="neutralDot" type="color" value="#f0f0f0"></label>
+        <label>Selected dots <input id="selectedDot" type="color" value="#fb6415"></label>
+        <label>Chip border <input id="chipStroke" type="color" value="#575757"></label>
+        <label>Glow <input id="glow" type="color" value="#ffffff"></label>
+        <label>Ring border <input id="ring" type="color" value="#ffffff"></label>
+        <label>Shadow <input id="shadow" type="color" value="#000000"></label>
+
+        <div class="swatches" aria-label="Preset styles">
+          <button class="swatch" data-preset="orange">Dark Orange</button>
+          <button class="swatch" data-preset="teal">Light Teal</button>
+          <button class="swatch" data-preset="blueprint">Blueprint</button>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3>Country Selection</h3>
+        <div class="country-grid" id="countryGrid"></div>
+      </section>
+
+      <section class="group">
+        <h3>Swift Snippet</h3>
+        <pre id="snippet"></pre>
+        <button class="copy" id="copyButton">Copy Swift</button>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const regions = [
+      { id: "us", title: "United States", lon: -130, lat: 38.6 },
+      { id: "middle_east", title: "Middle East", lon: 47.5, lat: 29.3 },
+      { id: "europe", title: "Europe", lon: 10.4, lat: 50.2 },
+      { id: "asia", title: "Asia", lon: 103, lat: 34 },
+      { id: "africa", title: "Africa", lon: 20, lat: 1.5 },
+      { id: "latam", title: "Latam", lon: -58.9, lat: -14.2 },
+      { id: "russia", title: "Russia", lon: 96, lat: 61.5 }
+    ];
+
+    const countries = ["France", "Japan", "Brazil", "India", "South Africa", "Australia"];
+    const state = {
+      selectedRegionIDs: new Set(["us"]),
+      focusedRegionID: "us",
+      selectedCountryNames: new Set(["France"]),
+      yaw: 0,
+      lastTime: performance.now()
+    };
+
+    const controls = {
+      autoRotates: document.getElementById("autoRotates"),
+      showsRegionPicker: document.getElementById("showsRegionPicker"),
+      allowsPan: document.getElementById("allowsPan"),
+      globeIsMetallic: document.getElementById("globeIsMetallic"),
+      textureMode: document.getElementById("textureMode"),
+      idleZoom: document.getElementById("idleZoom"),
+      selectedZoom: document.getElementById("selectedZoom"),
+      ringScale: document.getElementById("ringScale"),
+      rotationSpeed: document.getElementById("rotationSpeed"),
+      globeRoughness: document.getElementById("globeRoughness"),
+      background: document.getElementById("background"),
+      globeMaterial: document.getElementById("globeMaterial"),
+      neutralDot: document.getElementById("neutralDot"),
+      selectedDot: document.getElementById("selectedDot"),
+      chipStroke: document.getElementById("chipStroke"),
+      glow: document.getElementById("glow"),
+      ring: document.getElementById("ring"),
+      shadow: document.getElementById("shadow")
+    };
+
+    const canvas = document.getElementById("globe");
+    const ctx = canvas.getContext("2d");
+    const chips = document.getElementById("regionChips");
+    const countryGrid = document.getElementById("countryGrid");
+    const snippet = document.getElementById("snippet");
+    const copyButton = document.getElementById("copyButton");
+
+    function hexToRgb(hex) {
+      const normalized = hex.replace("#", "");
+      return {
+        r: parseInt(normalized.slice(0, 2), 16),
+        g: parseInt(normalized.slice(2, 4), 16),
+        b: parseInt(normalized.slice(4, 6), 16)
+      };
+    }
+
+    function rgba(hex, alpha) {
+      const { r, g, b } = hexToRgb(hex);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function colorToSwift(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      return `Color(red: ${(r / 255).toFixed(3)}, green: ${(g / 255).toFixed(3)}, blue: ${(b / 255).toFixed(3)})`;
+    }
+
+    function uiColorToSwift(hex, alpha = 1) {
+      const { r, g, b } = hexToRgb(hex);
+      return `UIColor(red: ${(r / 255).toFixed(3)}, green: ${(g / 255).toFixed(3)}, blue: ${(b / 255).toFixed(3)}, alpha: ${alpha})`;
+    }
+
+    function renderChips() {
+      chips.innerHTML = "";
+      chips.style.display = controls.showsRegionPicker.checked ? "flex" : "none";
+      for (const region of regions) {
+        const button = document.createElement("button");
+        button.className = `chip ${state.selectedRegionIDs.has(region.id) ? "active" : ""}`;
+        button.textContent = region.title;
+        button.addEventListener("click", () => {
+          state.focusedRegionID = region.id;
+          if (state.selectedRegionIDs.has(region.id)) {
+            state.selectedRegionIDs.delete(region.id);
+          } else {
+            state.selectedRegionIDs.add(region.id);
+          }
+          render();
+        });
+        chips.appendChild(button);
+      }
+    }
+
+    function renderCountries() {
+      countryGrid.innerHTML = "";
+      for (const country of countries) {
+        const button = document.createElement("button");
+        button.className = `country ${state.selectedCountryNames.has(country) ? "active" : ""}`;
+        button.textContent = country;
+        button.addEventListener("click", () => {
+          if (state.selectedCountryNames.has(country)) {
+            state.selectedCountryNames.delete(country);
+          } else {
+            state.selectedCountryNames.add(country);
+          }
+          render();
+        });
+        countryGrid.appendChild(button);
+      }
+    }
+
+    function drawGlobe(time) {
+      const size = canvas.width;
+      const center = size / 2;
+      const selected = state.selectedRegionIDs.has(state.focusedRegionID);
+      const zoom = Number(selected ? controls.selectedZoom.value : controls.idleZoom.value);
+      const radius = 210 * zoom;
+      const roughness = Number(controls.globeRoughness.value);
+      const metallic = controls.globeIsMetallic.checked ? 0.32 : 0;
+      const texture = controls.textureMode.value;
+
+      if (controls.autoRotates.checked) {
+        const delta = Math.min((time - state.lastTime) / 1000, 0.05);
+        state.yaw += delta * Number(controls.rotationSpeed.value) * 16;
+      }
+      state.lastTime = time;
+
+      ctx.clearRect(0, 0, size, size);
+
+      const globeGradient = ctx.createRadialGradient(center - radius * 0.28, center - radius * 0.34, radius * 0.06, center, center, radius);
+      globeGradient.addColorStop(0, rgba("#ffffff", 0.22 + metallic));
+      globeGradient.addColorStop(0.28, controls.globeMaterial.value);
+      globeGradient.addColorStop(1, "#000000");
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = globeGradient;
+      ctx.fillRect(center - radius, center - radius, radius * 2, radius * 2);
+
+      drawTexture(center, radius, texture, roughness);
+      drawDots(center, radius);
+
+      const rim = ctx.createRadialGradient(center + radius * 0.36, center, radius * 0.1, center, center, radius);
+      rim.addColorStop(0, rgba(controls.glow.value, 0));
+      rim.addColorStop(0.74, rgba(controls.glow.value, 0.04));
+      rim.addColorStop(1, rgba(controls.glow.value, 0.40));
+      ctx.fillStyle = rim;
+      ctx.fillRect(center - radius, center - radius, radius * 2, radius * 2);
+      ctx.restore();
+    }
+
+    function drawTexture(center, radius, texture, roughness) {
+      ctx.globalAlpha = Math.max(0.12, 0.54 - roughness * 0.28);
+      ctx.strokeStyle = rgba("#ffffff", 0.18);
+      ctx.lineWidth = 1.4;
+
+      if (texture === "grid" || texture === "topology") {
+        for (let i = -5; i <= 5; i++) {
+          const offset = i * radius / 5;
+          ctx.beginPath();
+          ctx.ellipse(center + offset * Math.sin(state.yaw), center, radius * 0.18, radius, state.yaw * 0.4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        for (let i = -4; i <= 4; i++) {
+          ctx.beginPath();
+          ctx.ellipse(center, center + i * radius / 5, radius, radius * 0.09, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      if (texture === "bands" || texture === "topology") {
+        for (let i = -5; i <= 5; i++) {
+          ctx.fillStyle = rgba(controls.selectedDot.value, i % 2 === 0 ? 0.10 : 0.045);
+          ctx.fillRect(center - radius, center + i * radius / 5, radius * 2, radius * 0.12);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    function drawDots(center, radius) {
+      const dotSeed = [
+        [-120, 38, "USA"], [-75, 40, "USA"], [2, 47, "France"], [12, 42, "Italy"], [138, 36, "Japan"],
+        [103, 22, "Asia"], [78, 21, "India"], [-47, -15, "Brazil"], [24, -29, "South Africa"], [133, -25, "Australia"],
+        [31, 27, "Africa"], [44, 24, "Middle East"], [96, 61, "Russia"], [-58, -34, "LATAM"]
+      ];
+
+      for (let i = 0; i < 120; i++) {
+        const lon = ((i * 53) % 360) - 180;
+        const lat = Math.sin(i * 1.71) * 66;
+        dotSeed.push([lon, lat, "neutral"]);
+      }
+
+      for (const [lon, lat, name] of dotSeed) {
+        const projected = project(lon, lat, center, radius);
+        if (!projected.visible) continue;
+        const selected = state.selectedCountryNames.has(name) || countryIsInSelectedRegion(name);
+        ctx.fillStyle = selected ? controls.selectedDot.value : rgba(controls.neutralDot.value, 0.74 * projected.depth);
+        ctx.beginPath();
+        ctx.arc(projected.x, projected.y, selected ? 4.7 : 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function countryIsInSelectedRegion(name) {
+      if (name === "USA") return state.selectedRegionIDs.has("us");
+      if (name === "Japan" || name === "India" || name === "Asia") return state.selectedRegionIDs.has("asia");
+      if (name === "Brazil" || name === "LATAM") return state.selectedRegionIDs.has("latam");
+      if (name === "France" || name === "Italy") return state.selectedRegionIDs.has("europe");
+      if (name === "South Africa" || name === "Africa") return state.selectedRegionIDs.has("africa");
+      if (name === "Middle East") return state.selectedRegionIDs.has("middle_east");
+      if (name === "Russia") return state.selectedRegionIDs.has("russia");
+      return false;
+    }
+
+    function project(lon, lat, center, radius) {
+      const lambda = (lon * Math.PI / 180) + state.yaw;
+      const phi = lat * Math.PI / 180;
+      const x3 = Math.cos(phi) * Math.sin(lambda);
+      const y3 = Math.sin(phi);
+      const z3 = Math.cos(phi) * Math.cos(lambda);
+      return {
+        x: center + x3 * radius * 0.82,
+        y: center - y3 * radius * 0.82,
+        depth: Math.max(0.28, z3),
+        visible: z3 > -0.12
+      };
+    }
+
+    function updateCss() {
+      document.documentElement.style.setProperty("--bg", controls.background.value);
+      document.documentElement.style.setProperty("--accent", controls.selectedDot.value);
+      document.documentElement.style.setProperty("--glow", controls.glow.value);
+      document.documentElement.style.setProperty("--ring", controls.ring.value);
+      document.documentElement.style.setProperty("--globe", controls.globeMaterial.value);
+      document.documentElement.style.setProperty("--neutral-dot", controls.neutralDot.value);
+      document.documentElement.style.setProperty("--selected-dot", controls.selectedDot.value);
+      document.documentElement.style.setProperty("--shadow", controls.shadow.value);
+      document.documentElement.style.setProperty("--line", controls.chipStroke.value);
+      document.documentElement.style.setProperty("--ring-scale", controls.ringScale.value);
+    }
+
+    function renderValues() {
+      for (const id of ["idleZoom", "selectedZoom", "ringScale", "rotationSpeed", "globeRoughness"]) {
+        document.getElementById(`${id}Value`).textContent = Number(controls[id].value).toFixed(id === "rotationSpeed" ? 3 : 2);
+      }
+    }
+
+    function renderSnippet() {
+      const countriesLiteral = Array.from(state.selectedCountryNames).map(country => `"${country}"`).join(", ");
+      const regionsLiteral = Array.from(state.selectedRegionIDs).map(id => `"${id}"`).join(", ");
+      const texture = controls.textureMode.value === "none"
+        ? "nil"
+        : `.resource(name: "${controls.textureMode.value}", extension: "png", bundle: .main)`;
+
+      snippet.textContent = `import RegionGlobe
+import SwiftUI
+import UIKit
+
+RegionGlobe(
+    regions: .defaultWorldRegions,
+    selectedRegionIDs: .constant([${regionsLiteral}]),
+    focusedRegionID: .constant("${state.focusedRegionID}"),
+    focusRequest: .constant(0),
+    selectedCountryNames: [${countriesLiteral}],
+    configuration: .init(
+        showsRegionPicker: ${controls.showsRegionPicker.checked},
+        autoRotates: ${controls.autoRotates.checked},
+        allowsPan: ${controls.allowsPan.checked},
+        ringScale: ${Number(controls.ringScale.value).toFixed(2)},
+        idleZoom: ${Number(controls.idleZoom.value).toFixed(2)},
+        selectedZoom: ${Number(controls.selectedZoom.value).toFixed(2)},
+        rotationSpeed: ${Number(controls.rotationSpeed.value).toFixed(3)},
+        style: RegionGlobeStyle(
+            background: ${colorToSwift(controls.background.value)},
+            foreground: .white,
+            muted: .white.opacity(0.62),
+            chipFill: .white.opacity(0.08),
+            chipStroke: ${colorToSwift(controls.chipStroke.value)},
+            selected: ${colorToSwift(controls.selectedDot.value)},
+            glow: ${colorToSwift(controls.glow.value)},
+            ring: ${colorToSwift(controls.ring.value)},
+            shadow: ${colorToSwift(controls.shadow.value)},
+            globeMaterial: ${uiColorToSwift(controls.globeMaterial.value)},
+            globeTexture: ${texture},
+            globeRoughness: ${Number(controls.globeRoughness.value).toFixed(2)},
+            globeIsMetallic: ${controls.globeIsMetallic.checked},
+            neutralDot: ${uiColorToSwift(controls.neutralDot.value, 0.88)},
+            selectedDot: ${uiColorToSwift(controls.selectedDot.value)}
+        )
+    )
+)`;
+    }
+
+    function render() {
+      updateCss();
+      renderValues();
+      renderChips();
+      renderCountries();
+      renderSnippet();
+    }
+
+    function animate(time) {
+      drawGlobe(time);
+      requestAnimationFrame(animate);
+    }
+
+    function applyPreset(name) {
+      const presets = {
+        orange: {
+          background: "#050607", globeMaterial: "#030405", neutralDot: "#f0f0f0", selectedDot: "#fb6415",
+          chipStroke: "#575757", glow: "#ffffff", ring: "#ffffff", shadow: "#000000"
+        },
+        teal: {
+          background: "#f4faf9", globeMaterial: "#051012", neutralDot: "#ffffff", selectedDot: "#00c2ad",
+          chipStroke: "#6aa6a1", glow: "#00b5a4", ring: "#00c2ad", shadow: "#6b7a78"
+        },
+        blueprint: {
+          background: "#061019", globeMaterial: "#071621", neutralDot: "#b9e8ff", selectedDot: "#ffd166",
+          chipStroke: "#2d6d93", glow: "#53b8ff", ring: "#ffd166", shadow: "#000815"
+        }
+      };
+      for (const [key, value] of Object.entries(presets[name])) {
+        controls[key].value = value;
+      }
+      render();
+    }
+
+    for (const control of Object.values(controls)) {
+      control.addEventListener("input", render);
+      control.addEventListener("change", render);
+    }
+
+    document.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => applyPreset(button.dataset.preset));
+    });
+
+    copyButton.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(snippet.textContent);
+      copyButton.textContent = "Copied";
+      setTimeout(() => copyButton.textContent = "Copy Swift", 1200);
+    });
+
+    render();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
