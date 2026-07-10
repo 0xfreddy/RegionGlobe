@@ -8,6 +8,14 @@
 
 [Watch the MP4 demo](assets/regionglobe-demo.mp4)
 
+## Screenshots
+
+![RegionGlobe controls demo](assets/regionglobe-screenshot-controls.jpg)
+
+![RegionGlobe color customization demo](assets/regionglobe-screenshot-colors.jpg)
+
+![RegionGlobe slider customization demo](assets/regionglobe-screenshot-sliders.jpg)
+
 ## Requirements
 
 - iOS 15+
