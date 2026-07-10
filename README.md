@@ -2,6 +2,12 @@
 
 `RegionGlobe` is a SwiftUI component for rendering a selectable, focusable region globe with RealityKit. It bundles a GeoJSON world map, builds country dot meshes locally, and exposes a small public API for custom regions, selected highlights, focus targets, styles, pan, and auto-rotation.
 
+## Demo
+
+<video src="assets/regionglobe-demo.mp4" controls muted playsinline width="100%"></video>
+
+[Watch the component demo](assets/regionglobe-demo.mp4)
+
 ## Requirements
 
 - iOS 15+
