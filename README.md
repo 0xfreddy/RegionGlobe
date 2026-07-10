@@ -30,7 +30,15 @@ import SwiftUI
 
 This repository includes a browser playground in `docs/index.html`. It mirrors the public props with sliders, color controls, texture modes, country selection, and generated Swift code.
 
-To publish it on GitHub Pages:
+Live preview:
+
+```text
+https://preview-production-e30a.up.railway.app
+```
+
+The Railway deployment serves the same `docs/index.html` playground through the dependency-free Node server in `server.js`.
+
+To publish the same playground on GitHub Pages instead:
 
 1. Open the repository on GitHub.
 2. Go to `Settings` -> `Pages`.
