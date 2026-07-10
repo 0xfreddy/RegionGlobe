@@ -4,9 +4,9 @@
 
 ## Demo
 
-<video src="assets/regionglobe-demo.mp4" controls muted playsinline width="100%"></video>
+[![RegionGlobe component demo](assets/regionglobe-demo.gif)](assets/regionglobe-demo.mp4)
 
-[Watch the component demo](assets/regionglobe-demo.mp4)
+[Watch the MP4 demo](assets/regionglobe-demo.mp4)
 
 ## Requirements
 
