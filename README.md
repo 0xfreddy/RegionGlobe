@@ -93,6 +93,122 @@ RegionGlobe(
 
 `globeTexture` accepts a bundled image resource, a `UIImage`, or a `CGImage` on iOS. Leave it as `nil` for a solid-color globe.
 
+## Public API
+
+### RegionGlobe
+
+```swift
+RegionGlobe(
+    regions: [RegionGlobeRegion],
+    selectedRegionIDs: Binding<Set<String>>,
+    focusedRegionID: Binding<String>,
+    focusRequest: Binding<Int>,
+    highlightedCountryNames: Set<String> = [],
+    focusedCoordinate: RegionGlobeCoordinate? = nil,
+    configuration: RegionGlobeConfiguration = .init()
+)
+```
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `regions` | `[RegionGlobeRegion]` | Region definitions to show in the picker and use for country highlighting/focus. |
+| `selectedRegionIDs` | `Binding<Set<String>>` | Selected region IDs. Matching countries render with the selected continent/dot color. |
+| `focusedRegionID` | `Binding<String>` | Region ID the globe should rotate/focus toward. |
+| `focusRequest` | `Binding<Int>` | Increment this value to replay focus animation for the current region or coordinate. |
+| `highlightedCountryNames` | `Set<String>` | Extra country names to highlight even if their region is not selected. Names must match the bundled GeoJSON. |
+| `focusedCoordinate` | `RegionGlobeCoordinate?` | Optional latitude/longitude focus target. Overrides `focusedRegionID` when present. |
+| `configuration` | `RegionGlobeConfiguration` | Layout, interaction, animation, zoom, and style options. |
+
+### RegionGlobeConfiguration
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `showsRegionPicker` | `Bool` | `true` | Shows or hides the built-in horizontal region picker. |
+| `autoRotates` | `Bool` | `true` | Enables idle globe rotation. |
+| `allowsPan` | `Bool` | `true` | Enables drag/pan rotation. |
+| `globeFrame` | `CGSize` | `520 x 558` | Fixed RealityKit globe view size inside the SwiftUI layout. |
+| `carouselTopPadding` | `CGFloat` | `28` | Top padding above the region picker when it is placed below the globe. |
+| `globeCarouselSpacing` | `CGFloat` | `24` | Vertical spacing between globe and picker. |
+| `carouselBottomPadding` | `CGFloat?` | `nil` | When set, pins the picker to the bottom of the component with this padding. |
+| `idleRingScale` | `CGFloat` | `0.55` | Glow/ring diameter scale when the focused region is not selected. |
+| `selectedRingScale` | `CGFloat` | `0.67` | Glow/ring diameter scale when the focused region is selected. |
+| `ringScale` | `CGFloat?` | `nil` | Fixed override for ring scale. |
+| `glowRingOpacityScale` | `Double` | `1` | Multiplier for ring/glow opacity. |
+| `idleZoom` | `Float` | `1.12` | Globe zoom when focusing an unselected region. |
+| `selectedZoom` | `Float` | `1.38` | Globe zoom when focusing a selected region. |
+| `coordinateFocusZoom` | `Float` | `1.36` | Globe zoom when `focusedCoordinate` is used. |
+| `rotationSpeed` | `Float` | `0.065` | Idle auto-rotation speed. |
+| `animationDuration` | `TimeInterval` | `0.82` | Focus animation duration. |
+| `style` | `RegionGlobeStyle` | `.darkOrange` | Full color/material/texture styling. |
+
+### RegionGlobeStyle
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `background` | `Color` | Background color used by fades and examples. Apply it to your own surrounding view if needed. |
+| `foreground` | `Color` | Unselected picker text color. |
+| `muted` | `Color` | Secondary text color for host/demo UI. |
+| `chipFill` | `Color` | Unselected picker chip fill. |
+| `chipStroke` | `Color` | Unselected picker chip border. |
+| `selected` | `Color` | Selected picker chip fill and the default selected accent. |
+| `selectedForeground` | `Color` | Selected picker text color. |
+| `glow` | `Color` | Soft radial glow color behind the globe. |
+| `ring` | `Color` | Bright ring/border color around the globe. Defaults to `glow` when omitted. |
+| `shadow` | `Color` | Ellipse shadow under the globe. |
+| `globeMaterial` | `UIColor` | Base material/tint color of the globe sphere. iOS only. |
+| `globeTexture` | `RegionGlobeTexture?` | Optional texture for the globe sphere. iOS only. |
+| `globeRoughness` | `Float` | RealityKit material roughness. Lower is glossier, higher is flatter. |
+| `globeIsMetallic` | `Bool` | Enables metallic material response for the globe sphere. |
+| `neutralDot` | `UIColor` | Color of unselected country/continent dots. iOS only. |
+| `selectedDot` | `UIColor` | Color of selected/highlighted country/continent dots. iOS only. |
+
+Preset styles:
+
+```swift
+RegionGlobeStyle.darkOrange
+RegionGlobeStyle.lightTeal
+```
+
+### RegionGlobeTexture
+
+| Case | Use When |
+| --- | --- |
+| `.resource(name:extension:bundle:)` | Texture image is bundled in your app or another bundle. |
+| `.image(_:name:)` | You already have a `UIImage`. |
+| `.cgImage(_:name:)` | You already have a `CGImage`. |
+
+Examples:
+
+```swift
+// App bundle PNG
+globeTexture: .resource(name: "earth-topology", extension: "png", bundle: .main)
+
+// UIImage generated at runtime
+globeTexture: .image(myGeneratedImage, name: "brand-grid")
+
+// CGImage from your rendering pipeline
+globeTexture: .cgImage(myCGImage, name: "custom-map")
+```
+
+Textures are applied to the globe sphere material. Country/continent dots remain separate meshes controlled by `neutralDot` and `selectedDot`.
+
+### RegionGlobeRegion
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `id` | `String` | Stable region ID used by selection and focus bindings. |
+| `title` | `String` | Region name. |
+| `displayTitle` | `String` | Optional picker label override. Defaults to `title`. |
+| `countryNames` | `Set<String>` | GeoJSON country names highlighted when the region is selected. |
+| `focus` | `RegionGlobeCoordinate` | Latitude/longitude target used when focusing this region. |
+
+### RegionGlobeCoordinate
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `latitude` | `Double` | Latitude in degrees. |
+| `longitude` | `Double` | Longitude in degrees. |
+
 ## Custom Regions
 
 ```swift
