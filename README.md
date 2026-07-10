@@ -40,6 +40,7 @@ struct ExampleView: View {
             selectedRegionIDs: $selectedRegionIDs,
             focusedRegionID: $focusedRegionID,
             focusRequest: $focusRequest,
+            selectedCountryNames: ["France", "Japan"],
             configuration: .init(
                 autoRotates: true,
                 showsRegionPicker: true,
@@ -103,6 +104,7 @@ RegionGlobe(
     selectedRegionIDs: Binding<Set<String>>,
     focusedRegionID: Binding<String>,
     focusRequest: Binding<Int>,
+    selectedCountryNames: Set<String> = [],
     highlightedCountryNames: Set<String> = [],
     focusedCoordinate: RegionGlobeCoordinate? = nil,
     configuration: RegionGlobeConfiguration = .init()
@@ -115,7 +117,8 @@ RegionGlobe(
 | `selectedRegionIDs` | `Binding<Set<String>>` | Selected region IDs. Matching countries render with the selected continent/dot color. |
 | `focusedRegionID` | `Binding<String>` | Region ID the globe should rotate/focus toward. |
 | `focusRequest` | `Binding<Int>` | Increment this value to replay focus animation for the current region or coordinate. |
-| `highlightedCountryNames` | `Set<String>` | Extra country names to highlight even if their region is not selected. Names must match the bundled GeoJSON. |
+| `selectedCountryNames` | `Set<String>` | First-class country-level selection. These countries render with `selectedDot` even when their regions are not selected. |
+| `highlightedCountryNames` | `Set<String>` | Backward-compatible alias for extra country highlights. Prefer `selectedCountryNames` for new code. |
 | `focusedCoordinate` | `RegionGlobeCoordinate?` | Optional latitude/longitude focus target. Overrides `focusedRegionID` when present. |
 | `configuration` | `RegionGlobeConfiguration` | Layout, interaction, animation, zoom, and style options. |
 
@@ -192,6 +195,36 @@ globeTexture: .cgImage(myCGImage, name: "custom-map")
 
 Textures are applied to the globe sphere material. Country/continent dots remain separate meshes controlled by `neutralDot` and `selectedDot`.
 
+### Country-Level Selection
+
+Use `selectedCountryNames` when you want to highlight individual countries without creating a region or selecting a continent-style group:
+
+```swift
+RegionGlobe(
+    regions: .defaultWorldRegions,
+    selectedRegionIDs: $selectedRegionIDs,
+    focusedRegionID: $focusedRegionID,
+    focusRequest: $focusRequest,
+    selectedCountryNames: ["France", "Japan", "Brazil"]
+)
+```
+
+Country names must match `properties.name` in the bundled GeoJSON. Common examples include `USA`, `France`, `Japan`, `Brazil`, `India`, `South Africa`, and `Australia`.
+
+You can combine both levels:
+
+```swift
+RegionGlobe(
+    regions: .defaultWorldRegions,
+    selectedRegionIDs: $selectedRegionIDs, // e.g. ["europe"]
+    focusedRegionID: $focusedRegionID,
+    focusRequest: $focusRequest,
+    selectedCountryNames: ["Japan", "Brazil"]
+)
+```
+
+The selected country mesh is the union of selected region countries plus `selectedCountryNames`.
+
 ### RegionGlobeRegion
 
 | Prop | Type | Description |
@@ -236,7 +269,8 @@ let regions: [RegionGlobeRegion] = [
 - Selected regions build and cache separate highlight meshes by country-name selection.
 - `configuration.allowsPan` controls manual drag rotation.
 - `configuration.autoRotates` controls idle rotation.
-- `highlightedCountryNames` can highlight countries independently from region selection.
+- `selectedCountryNames` can highlight countries independently from region selection.
+- `highlightedCountryNames` is still supported as a compatibility hook for country highlights.
 - `focusedCoordinate` can focus arbitrary latitude/longitude coordinates instead of a region.
 
 ## GeoJSON Attribution

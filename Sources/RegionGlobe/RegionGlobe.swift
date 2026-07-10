@@ -5,6 +5,7 @@ public struct RegionGlobe: View {
     @Binding private var selectedRegionIDs: Set<String>
     @Binding private var focusedRegionID: String
     @Binding private var focusRequest: Int
+    private let selectedCountryNames: Set<String>
     private let highlightedCountryNames: Set<String>
     private let focusedCoordinate: RegionGlobeCoordinate?
     private let configuration: RegionGlobeConfiguration
@@ -14,6 +15,7 @@ public struct RegionGlobe: View {
         selectedRegionIDs: Binding<Set<String>>,
         focusedRegionID: Binding<String>,
         focusRequest: Binding<Int>,
+        selectedCountryNames: Set<String> = [],
         highlightedCountryNames: Set<String> = [],
         focusedCoordinate: RegionGlobeCoordinate? = nil,
         configuration: RegionGlobeConfiguration = .init()
@@ -22,6 +24,7 @@ public struct RegionGlobe: View {
         self._selectedRegionIDs = selectedRegionIDs
         self._focusedRegionID = focusedRegionID
         self._focusRequest = focusRequest
+        self.selectedCountryNames = selectedCountryNames
         self.highlightedCountryNames = highlightedCountryNames
         self.focusedCoordinate = focusedCoordinate
         self.configuration = configuration
@@ -67,6 +70,7 @@ public struct RegionGlobe: View {
                 ),
                 focusedRegionID: $focusedRegionID,
                 focusRequest: $focusRequest,
+                selectedCountryNames: selectedCountryNames,
                 highlightedCountryNames: highlightedCountryNames,
                 focusedCoordinate: focusedCoordinate,
                 configuration: configuration

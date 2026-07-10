@@ -13,6 +13,7 @@ struct RegionGlobeDemoApp: App {
 
 private struct DemoControlSurface: View {
     @State private var selectedRegionIDs: Set<String> = ["us"]
+    @State private var selectedCountryNames: Set<String> = ["France"]
     @State private var focusedRegionID = "us"
     @State private var focusRequest = 0
     @State private var autoRotates = true
@@ -46,6 +47,7 @@ private struct DemoControlSurface: View {
                     selectedRegionIDs: $selectedRegionIDs,
                     focusedRegionID: $focusedRegionID,
                     focusRequest: $focusRequest,
+                    selectedCountryNames: selectedCountryNames,
                     configuration: configuration
                 )
                 .frame(maxWidth: .infinity)
@@ -121,6 +123,24 @@ private struct DemoControlSurface: View {
                 controlSlider("Rotation speed", value: $rotationSpeed, range: 0.0...0.16)
                 controlSlider("Globe roughness", value: $roughness, range: 0.08...1.0)
 
+                Text("Countries")
+                    .font(.subheadline.weight(.semibold))
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
+                    ForEach(Self.demoCountries, id: \.self) { country in
+                        Button(country) {
+                            if selectedCountryNames.contains(country) {
+                                selectedCountryNames.remove(country)
+                            } else {
+                                selectedCountryNames.insert(country)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(selectedCountryNames.contains(country) ? selectedCountryColor : .secondary)
+                        .accessibilityValue(selectedCountryNames.contains(country) ? "Selected" : "Not selected")
+                    }
+                }
+
                 Text("Focus")
                     .font(.subheadline.weight(.semibold))
 
@@ -169,6 +189,15 @@ private struct DemoControlSurface: View {
             Slider(value: value, in: range)
         }
     }
+
+    private static let demoCountries = [
+        "France",
+        "Japan",
+        "Brazil",
+        "India",
+        "South Africa",
+        "Australia"
+    ]
 }
 
 private enum DemoTextureMode: String, CaseIterable, Identifiable {

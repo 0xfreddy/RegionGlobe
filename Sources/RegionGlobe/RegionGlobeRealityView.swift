@@ -8,6 +8,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
     @Binding var selectedRegionIDs: [String]
     @Binding var focusedRegionID: String
     @Binding var focusRequest: Int
+    var selectedCountryNames: Set<String> = []
     var highlightedCountryNames: Set<String> = []
     var focusedCoordinate: RegionGlobeCoordinate?
     var configuration: RegionGlobeConfiguration
@@ -18,6 +19,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
             selectedRegionIDs: $selectedRegionIDs,
             focusedRegionID: $focusedRegionID,
             focusRequest: $focusRequest,
+            selectedCountryNames: selectedCountryNames,
             highlightedCountryNames: highlightedCountryNames,
             focusedCoordinate: focusedCoordinate,
             configuration: configuration
@@ -44,6 +46,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
         context.coordinator.selectedRegionIDs = $selectedRegionIDs
         context.coordinator.focusedRegionID = $focusedRegionID
         context.coordinator.focusRequest = $focusRequest
+        context.coordinator.selectedCountryNames = selectedCountryNames
         context.coordinator.highlightedCountryNames = highlightedCountryNames
         context.coordinator.focusedCoordinate = focusedCoordinate
         context.coordinator.configuration = configuration
@@ -61,6 +64,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
         var selectedRegionIDs: Binding<[String]>
         var focusedRegionID: Binding<String>
         var focusRequest: Binding<Int>
+        var selectedCountryNames: Set<String>
         var highlightedCountryNames: Set<String>
         var focusedCoordinate: RegionGlobeCoordinate?
         var configuration: RegionGlobeConfiguration
@@ -96,6 +100,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
             selectedRegionIDs: Binding<[String]>,
             focusedRegionID: Binding<String>,
             focusRequest: Binding<Int>,
+            selectedCountryNames: Set<String>,
             highlightedCountryNames: Set<String>,
             focusedCoordinate: RegionGlobeCoordinate?,
             configuration: RegionGlobeConfiguration
@@ -104,6 +109,7 @@ struct RegionGlobeRealityView: UIViewRepresentable {
             self.selectedRegionIDs = selectedRegionIDs
             self.focusedRegionID = focusedRegionID
             self.focusRequest = focusRequest
+            self.selectedCountryNames = selectedCountryNames
             self.highlightedCountryNames = highlightedCountryNames
             self.focusedCoordinate = focusedCoordinate
             self.configuration = configuration
@@ -311,8 +317,10 @@ struct RegionGlobeRealityView: UIViewRepresentable {
         }
 
         private func updateGlobeMaterial(selected: Set<String>) {
-            let selectedCountryNames = countryNames(for: selected).union(highlightedCountryNames)
-            let selectionKey = selectedCountryNames.sorted().joined(separator: ",")
+            let activeCountryNames = countryNames(for: selected)
+                .union(selectedCountryNames)
+                .union(highlightedCountryNames)
+            let selectionKey = activeCountryNames.sorted().joined(separator: ",")
             if selectionKey == appliedSelectionKey {
                 if selectedCellsEntity?.isEnabled == true {
                     selectedCellsEntity?.model?.materials = selectedCellMaterials()
@@ -320,13 +328,13 @@ struct RegionGlobeRealityView: UIViewRepresentable {
                 return
             }
 
-            guard !selectedCountryNames.isEmpty else {
+            guard !activeCountryNames.isEmpty else {
                 selectedCellsEntity?.isEnabled = false
                 appliedSelectionKey = selectionKey
                 return
             }
 
-            if let mesh = RegionGlobeMeshBuilder.selectedCountryCellMesh(selectedCountryNames: selectedCountryNames, cacheKey: selectionKey),
+            if let mesh = RegionGlobeMeshBuilder.selectedCountryCellMesh(selectedCountryNames: activeCountryNames, cacheKey: selectionKey),
                let selectedCellsEntity {
                 var component = selectedCellsEntity.model ?? ModelComponent(mesh: mesh, materials: selectedCellMaterials())
                 component.mesh = mesh
