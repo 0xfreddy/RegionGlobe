@@ -1,6 +1,26 @@
-# RegionGlobe
+# PrettyRegionGlobe
 
-`RegionGlobe` is a SwiftUI component for rendering a selectable, focusable region globe with RealityKit. It bundles a GeoJSON world map, builds country dot meshes locally, and exposes a small public API for custom regions, selected highlights, focus targets, styles, pan, and auto-rotation.
+Native SwiftUI globe picker powered by RealityKit, built as a reusable Swift Package for iOS apps.
+
+[![Swift](https://img.shields.io/badge/Swift-6.2+-FA7343?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
+[![iOS](https://img.shields.io/badge/iOS-15.0+-111111?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/ios/)
+[![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-0F7CFF?style=for-the-badge&logo=swift&logoColor=white)](Package.swift)
+[![RealityKit](https://img.shields.io/badge/RealityKit-renderer-6E56CF?style=for-the-badge)](https://developer.apple.com/augmented-reality/realitykit/)
+[![License](https://img.shields.io/badge/License-MIT-FFD43B?style=for-the-badge)](LICENSE)
+
+[Demo](#demo) · [Screenshots](#screenshots) · [Installation](#installation) · [Quick Start](#quick-start) · [Customization](#customization) · [API](#public-api) · [License](#license)
+
+`PrettyRegionGlobe` ships the `RegionGlobe` Swift module: a selectable, focusable globe component that builds country dot meshes from GeoJSON and exposes a compact SwiftUI API for region selection, country-level highlights, custom focus targets, styling, textures, pan, and auto-rotation.
+
+## Features
+
+- Native SwiftUI API with a RealityKit renderer.
+- Region/continent picker with selectable chips.
+- First-class country-level selection through `selectedCountryNames`.
+- Custom regions backed by GeoJSON country names.
+- Focus animations for regions or arbitrary latitude/longitude coordinates.
+- Configurable globe material, texture, glow, ring, shadow, picker colors, selected dots, zoom, roughness, and rotation speed.
+- Demo app included for simulator recording and prop tuning.
 
 ## Demo
 
@@ -18,7 +38,7 @@
 
 ## Requirements
 
-- iOS 15+
+- iOS 15.0+
 - Swift 6.2+
 - Swift Package Manager
 - RealityKit
@@ -33,6 +53,12 @@ Add this repository as a Swift Package dependency in Xcode:
 File > Add Package Dependencies...
 ```
 
+Use the repository URL:
+
+```text
+https://github.com/0xfreddy/PrettyGlobe
+```
+
 Then import the library:
 
 ```swift
@@ -40,7 +66,9 @@ import RegionGlobe
 import SwiftUI
 ```
 
-## Basic Usage
+The public repo is `PrettyGlobe`; the Swift package product and module are currently named `RegionGlobe`.
+
+## Quick Start
 
 ```swift
 struct ExampleView: View {
@@ -69,7 +97,7 @@ struct ExampleView: View {
 
 Increment `focusRequest` when you want to re-run the focus animation for the current `focusedRegionID`.
 
-## Custom Style
+## Customization
 
 ```swift
 import UIKit
